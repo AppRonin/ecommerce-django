@@ -4,19 +4,26 @@ from .models import Cart, CartItem
 from store.models import Product
 
 def _cart_id(request):
+    """Create an unique id with session cookie"""
+
     cart = request.session.session_key
     if not cart:
         cart = request.session.create()
     return cart
 
 def add_cart(request, product_id):
+    """Add products to cart"""
+
     product = Product.objects.get(id=product_id)
+
+    # if cart exist get, else create
     try:
-        # get cart using the cart id present in the session
         cart = Cart.objects.get(cart_id=_cart_id(request))
     except Cart.DoesNotExist:
         cart = Cart.objects.create(cart_id=_cart_id(request))
     cart.save()
+
+    # if item exist get and add more, else create one
     try:
         cart_item =CartItem.objects.get(product=product, cart=cart)
         cart_item.quantity += 1
@@ -27,6 +34,9 @@ def add_cart(request, product_id):
     return redirect('cart')
 
 def cart(request):
+    """Cart View, Renders page with cart data"""
+
+    # Get cart, items, total and quantity data
     try:
         cart = Cart.objects.get(cart_id=_cart_id(request))
         cart_items = CartItem.objects.filter(cart=cart, is_active=True)
